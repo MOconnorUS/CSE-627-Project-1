@@ -20,7 +20,7 @@ CONFIGS = {
         "image_size": (256, 256),
         "n_samples": 500,
         "network_type": "drive",  
-        'data_dir': 'data/thinning'
+        'data_dir': '../../../data/thinning'
     },
 }
 
@@ -106,6 +106,10 @@ def download_osm_data(config, cache_dir="cache"):
     return gdf_edges, gdf_nodes
 
 def pick_random_intersections(nodes, n=500):
+    # return nodes.sample(n)
+    if n > len(nodes):
+        print(f"Requested {n} samples, but only {len(nodes)} nodes available. Sampling all nodes.")
+        n = len(nodes)
     return nodes.sample(n)
 
 def rasterize_roads(roads, bounds, size, thickness_fn):
@@ -178,4 +182,4 @@ def generate_samples(gdf_edges, gdf_nodes, n_samples=500, out_dir="dataset", ima
 if __name__ == "__main__":
   config=CONFIGS[CONFIG]
   edges, nodes = download_osm_data(config)
-  generate_samples(edges, nodes, n_samples=config['n_samples'], out_dir=config.setdefault('data_dir', './data/thinning'))
+  generate_samples(edges, nodes, n_samples=config['n_samples'], out_dir=config.setdefault('data_dir', '../../../data/thinning'))
