@@ -1,1 +1,3 @@
 ./project_env
+
+./trace/models/my_checkpoint.pth.tar
