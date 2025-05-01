@@ -1,17 +1,20 @@
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from tqdm import tqdm
 import torch.nn as nn
 import torch.optim as optim
 from model import UNET
+from model import ThinningUNet
 from utils import load_checkpoint, save_checkpoint, get_loaders, check_accuracy, save_predictions_as_imgs
 
 # Hyper Params
 LEARNING_RATE = 1e-4
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 32
-NUM_EPOCHS = 50
+NUM_EPOCHS = 100
 NUM_WORKERS = 2
 IMAGE_HEIGHT = 256
 IMAGE_WIDTH = 256
@@ -23,7 +26,7 @@ VAL_IMG_DIR = '../../data/val_images/'
 VAL_SKELE_DIR = '../../data/val_skele_images/'
 
 
-def train_fn(loader, model, optimizer, loss_fn, scaler):
+def train_fn(loader, model, optimizer, loss_fn, scaler, steps=5):
     loop = tqdm(loader)
 
     for batch_idx, (data, targets) in enumerate(loop):
@@ -32,8 +35,16 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
 
         # forward
         with torch.amp.autocast(device_type=DEVICE):
-            predictions = model(data)
-            loss = loss_fn(predictions, targets)
+            predictions = model(data, training=True)
+            # loss = loss_fn(predictions, targets)
+
+            # Not enough space to handle all steps below
+            # loss = 0
+            # for step in range(steps):
+            #     loss += loss_fn(predictions[step], targets)
+
+            final_output = predictions[-1]
+            loss = loss_fn(final_output, targets)
 
         # backward
         optimizer.zero_grad()
@@ -42,6 +53,21 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
         scaler.update()
 
         loop.set_postfix(loss=loss.item())
+
+class DiceLoss(nn.Module):
+    def __init__(self, smooth=1e-6):
+        super(DiceLoss, self).__init__()
+        self.smooth = smooth
+
+    def forward(self, logits, targets):
+        logits = torch.sigmoid(logits)  # convert logits to probabilities
+        logits = logits.view(-1)
+        targets = targets.view(-1)
+        
+        intersection = (logits * targets).sum()
+        dice = (2. * intersection + self.smooth) / (logits.sum() + targets.sum() + self.smooth)
+        
+        return 1 - dice
 
 def main():
     train_transform = A.Compose(
@@ -68,8 +94,11 @@ def main():
         ]
     )
 
-    model = UNET(in_channels=1, out_channels=1).to(DEVICE)
+    # model = UNET(in_channels=1, out_channels=1).to(DEVICE)
+    model = ThinningUNet(steps=5).to(DEVICE)
+
     loss_fn = nn.BCEWithLogitsLoss()
+    # loss_fn = DiceLoss()
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     train_loader, val_loader = get_loaders(
@@ -107,12 +136,12 @@ def main():
         train_fn(train_loader, model, optimizer, loss_fn, scaler)
 
         # save model
-        checkpoint = {
-            'state_dict': model.state_dict(),
-            'optimizer': optimizer.state_dict()
-        }
+        # checkpoint = {
+        #     'state_dict': model.state_dict(),
+        #     'optimizer': optimizer.state_dict()
+        # }
 
-        save_checkpoint(checkpoint)
+        # save_checkpoint(checkpoint)
         
         # check accuracy
         check_accuracy(val_loader, model, epoch, run_metrics, device=DEVICE)

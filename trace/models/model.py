@@ -9,16 +9,18 @@ class DoubleConv(nn.Module):
             nn.Conv2d(in_channels, out_channels, 3, 1, 1, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
+            # nn.LeakyReLU(inplace=True),
             nn.Conv2d(out_channels, out_channels, 3, 1, 1, bias=False),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
+            # nn.LeakyReLU(inplace=True),
         )
 
     def forward(self, x):
         return self.conv(x)
     
 class UNET(nn.Module):
-    def __init__(self, in_channels=3, out_channels=1, features=[32,64,128,256]):
+    def __init__(self, in_channels=1, out_channels=1, features=[32,64,128,256]):
         super(UNET, self).__init__()
         self.ups = nn.ModuleList()
         self.downs = nn.ModuleList()
@@ -59,6 +61,23 @@ class UNET(nn.Module):
             x = self.ups[idx + 1](concat_skip)
 
         return self.final_conv(x)
+
+class ThinningUNet(nn.Module):
+    def __init__(self, steps=5):
+        super().__init__()
+        self.steps = steps
+        self.unet = UNET(in_channels=1, out_channels=1)  # Make sure your input is 1-channel
+
+    def forward(self, x, training=False):
+        out_list = []
+        for _ in range(self.steps):
+            x = self.unet(x)
+            x = torch.sigmoid(x)
+            if not training:
+                x = (x > 0.5).float()  # Use only during inference
+            out_list.append(x)
+        return out_list  # Return list of outputs for multi-step loss
+
 
 # def test():
 #     x = torch.randn((1, 1, 160, 160))
