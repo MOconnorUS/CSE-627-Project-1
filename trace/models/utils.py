@@ -104,18 +104,31 @@ def check_valency(preds, y_true, epoch, run_metrics):
             run_metrics['Valent-4 Precision'][epoch] += precision
             run_metrics['Valent-4 Recall'][epoch] += recall
 
-    run_metrics['Valent-1 Precision'][epoch] = run_metrics['Valent-1 Precision'][epoch] / 4
-    run_metrics['Valent-1 Recall'][epoch] = run_metrics['Valent-1 Recall'][epoch] / 4
+    # run_metrics['Valent-1 Precision'][epoch] = run_metrics['Valent-1 Precision'][epoch] / 4
+    # run_metrics['Valent-1 Recall'][epoch] = run_metrics['Valent-1 Recall'][epoch] / 4
 
-    run_metrics['Valent-2 Precision'][epoch] = run_metrics['Valent-2 Precision'][epoch] / 4
-    run_metrics['Valent-2 Recall'][epoch] = run_metrics['Valent-2 Recall'][epoch] / 4
+    # run_metrics['Valent-2 Precision'][epoch] = run_metrics['Valent-2 Precision'][epoch] / 4
+    # run_metrics['Valent-2 Recall'][epoch] = run_metrics['Valent-2 Recall'][epoch] / 4
 
-    run_metrics['Valent-3 Precision'][epoch] = run_metrics['Valent-3 Precision'][epoch] / 4
-    run_metrics['Valent-3 Recall'][epoch] = run_metrics['Valent-3 Recall'][epoch] / 4
+    # run_metrics['Valent-3 Precision'][epoch] = run_metrics['Valent-3 Precision'][epoch] / 4
+    # run_metrics['Valent-3 Recall'][epoch] = run_metrics['Valent-3 Recall'][epoch] / 4
 
-    run_metrics['Valent-4 Precision'][epoch] = run_metrics['Valent-4 Precision'][epoch] / 4
-    run_metrics['Valent-4 Recall'][epoch] = run_metrics['Valent-4 Recall'][epoch] / 4
+    # run_metrics['Valent-4 Precision'][epoch] = run_metrics['Valent-4 Precision'][epoch] / 4
+    # run_metrics['Valent-4 Recall'][epoch] = run_metrics['Valent-4 Recall'][epoch] / 4
     
+    # For Thinning
+    run_metrics['Valent-1 Precision'][epoch] = run_metrics['Valent-1 Precision'][epoch] / 25
+    run_metrics['Valent-1 Recall'][epoch] = run_metrics['Valent-1 Recall'][epoch] / 25
+
+    run_metrics['Valent-2 Precision'][epoch] = run_metrics['Valent-2 Precision'][epoch] / 25
+    run_metrics['Valent-2 Recall'][epoch] = run_metrics['Valent-2 Recall'][epoch] / 25
+
+    run_metrics['Valent-3 Precision'][epoch] = run_metrics['Valent-3 Precision'][epoch] / 25
+    run_metrics['Valent-3 Recall'][epoch] = run_metrics['Valent-3 Recall'][epoch] / 25
+
+    run_metrics['Valent-4 Precision'][epoch] = run_metrics['Valent-4 Precision'][epoch] / 25
+    run_metrics['Valent-4 Recall'][epoch] = run_metrics['Valent-4 Recall'][epoch] / 25
+
 def get_valency(image, x, y):
     valency = 0
     neighbors = [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]  # Adjacent nodes (up, down, left, right)
@@ -228,7 +241,7 @@ def save_predictions_as_imgs(loader, model, folder="saved_images/", device="cuda
     for idx, (x, y) in enumerate(loader):
         x = x.to(device=device)
         with torch.no_grad():
-            # For Thinning
+            # # For Thinning
             output_steps = model(x)
             final_output = output_steps[-1]  # Use the last step
             preds = torch.sigmoid(final_output)

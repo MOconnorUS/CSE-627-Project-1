@@ -13,8 +13,9 @@ from utils import load_checkpoint, save_checkpoint, get_loaders, check_accuracy,
 # Hyper Params
 LEARNING_RATE = 1e-4
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-BATCH_SIZE = 32
-NUM_EPOCHS = 100
+BATCH_SIZE = 4 # For thinning to not run out of memory
+# BATCH_SIZE = 32
+NUM_EPOCHS = 25
 NUM_WORKERS = 2
 IMAGE_HEIGHT = 256
 IMAGE_WIDTH = 256
@@ -35,7 +36,12 @@ def train_fn(loader, model, optimizer, loss_fn, scaler, steps=5):
 
         # forward
         with torch.amp.autocast(device_type=DEVICE):
+            # UNet
+            # predictions = model(data)
+
+            # Thinning UNet
             predictions = model(data, training=True)
+            
             # loss = loss_fn(predictions, targets)
 
             # Not enough space to handle all steps below
@@ -149,6 +155,7 @@ def main():
         # print some examples
         save_predictions_as_imgs(val_loader, model, folder="saved_images/", device=DEVICE)
 
+        print(f'JUST FINISHED EPOCH {epoch}')
         # check_loader(val_loader, DEVICE)
 
     print(f'Average Accuracy: {sum(run_metrics["Accuracy"].values()) / len(run_metrics['Accuracy'])}')
